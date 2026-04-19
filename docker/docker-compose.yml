@@ -1,0 +1,64 @@
+services:
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16          
+    container_name: scholar-db
+    environment:
+      POSTGRES_USER: prishita
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scholar_dev}
+      POSTGRES_DB: arxiv_rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prishita -d arxiv_rag"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # FastAPI App 
+  api:
+    build:
+      context: ..   
+      dockerfile: docker/Dockerfile
+    container_name: scholar-api
+    ports:
+    - "127.0.0.1:8000:8000"
+    environment:
+      # Database — use service name "postgres" not "localhost"
+      # Inside Docker network, containers find each other by service name
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: arxiv_rag
+      DB_USER: prishita
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-scholar_dev}
+
+      # Ollama — runs on host Mac, not in Docker
+      # host.docker.internal = special DNS name that points to your Mac
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: llama3.2
+
+      # Embeddings and ChromaDB
+      EMBEDDING_MODEL: all-MiniLM-L6-v2
+      CHROMA_PATH: /app/chroma_db
+      ARXIV_MAX_RESULTS: 100
+      ARXIV_SEARCH_QUERY: machine learning
+
+      RERANKER_MODEL: cross-encoder/ms-marco-MiniLM-L-6-v2
+
+    volumes:
+      - chroma_data:/app/chroma_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres_data:
+  chroma_data:
