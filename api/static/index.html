@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scholar — ArXiv Research Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        :root {
+            --bg: #0d0f0f;
+            --bg2: #131818;
+            --bg3: #1a2020;
+            --bg4: #222929;
+            --border: rgba(255, 255, 255, 0.06);
+            --border2: rgba(255, 255, 255, 0.1);
+            --text: #d8e8e4;
+            --text2: #7a9e96;
+            --text3: #3e6056;
+            --accent: #2dd4b8;
+            --accent2: #4ee8cc;
+            --abg: rgba(45, 212, 184, 0.08);
+            --ab: rgba(45, 212, 184, 0.2);
+            --green: #52c97a;
+            --red: #e86161;
+            --amber: #e4a84c;
+            --r: 13px;
+            --rs: 8px;
+            --rx: 5px;
+            --sw: 256px;
+            --font: 'Inter', sans-serif;
+            --mono: 'DM Mono', monospace;
+            --serif: 'Lora', serif;
+        }
+
+        [data-theme="light"] {
+            --bg: #f4f7f6;
+            --bg2: #ffffff;
+            --bg3: #eaf2f0;
+            --bg4: #dceee9;
+            --border: rgba(0, 0, 0, 0.06);
+            --border2: rgba(0, 0, 0, 0.1);
+            --text: #0e1f1c;
+            --text2: #3a6860;
+            --text3: #8ab5ae;
+            --accent: #0d9e87;
+            --accent2: #12b89e;
+            --abg: rgba(13, 158, 135, 0.07);
+            --ab: rgba(13, 158, 135, 0.2);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.65;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sb {
+            width: var(--sw);
+            min-width: var(--sw);
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: width .2s, min-width .2s;
+            overflow: hidden;
+        }
+
+        .sb.off {
+            width: 0;
+            min-width: 0;
+        }
+
+        .sb-top {
+            padding: 14px 12px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sb-brand {
+            font-family: var(--serif);
+            font-size: 17px;
+            color: var(--text);
+            padding: 2px 5px 10px;
+            letter-spacing: -.3px;
+        }
+
+        .sb-brand span {
+            color: var(--accent2);
+        }
+
+        .nb {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            width: 100%;
+            padding: 8px 10px;
+            background: var(--abg);
+            border: 1px solid var(--ab);
+            border-radius: var(--rs);
+            color: var(--accent2);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .nb:hover {
+            background: rgba(45, 212, 184, .14);
+        }
+
+        .sb-s {
+            padding: 11px 12px 0;
+        }
+
+        .sb-l {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: var(--text3);
+            padding: 0 4px 7px;
+        }
+
+        .cl {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 10px 8px;
+        }
+
+        .ci {
+            padding: 8px 10px;
+            border-radius: var(--rs);
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text2);
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            margin-bottom: 1px;
+            border: 1px solid transparent;
+            transition: all .15s;
+            line-height: 1.45;
+        }
+
+        .ci:hover {
+            background: var(--bg3);
+            color: var(--text);
+            border-color: var(--border);
+        }
+
+        .ci.act {
+            background: var(--abg);
+            color: var(--accent2);
+            border-color: var(--ab);
+        }
+
+        .ci-t {
+            flex: 1;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .ci-x {
+            opacity: 0;
+            font-size: 11px;
+            color: var(--text3);
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: all .15s;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .ci:hover .ci-x {
+            opacity: 1;
+        }
+
+        .ci-x:hover {
+            color: var(--red);
+        }
+
+        .ce {
+            font-size: 12px;
+            color: var(--text3);
+            padding: 6px 4px;
+            font-style: italic;
+        }
+
+        .sb-f {
+            padding: 11px;
+            border-top: 1px solid var(--border);
+        }
+
+        .ibtn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: var(--rs);
+            color: var(--text2);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .ibtn:hover {
+            background: var(--bg4);
+            color: var(--text);
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .topbar {
+            height: 49px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            background: var(--bg2);
+            flex-shrink: 0;
+        }
+
+        .ib {
+            width: 29px;
+            height: 29px;
+            border: 1px solid var(--border2);
+            border-radius: var(--rx);
+            background: transparent;
+            color: var(--text2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+            flex-shrink: 0;
+        }
+
+        .ib:hover {
+            background: var(--bg3);
+            color: var(--text);
+        }
+
+        .tt {
+            font-family: var(--serif);
+            font-size: 16px;
+            flex: 1;
+            letter-spacing: -.2px;
+        }
+
+        .tt span {
+            color: var(--accent2);
+            font-style: italic;
+        }
+
+        .sp {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 9px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+
+        .sd {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text3);
+            flex-shrink: 0;
+        }
+
+        .sd.on {
+            background: var(--green);
+            box-shadow: 0 0 5px rgba(82, 201, 122, .35);
+        }
+
+        .sd.busy {
+            background: var(--amber);
+            animation: pulse 1s infinite;
+        }
+
+        .sl {
+            font-size: 11px;
+            color: var(--text2);
+            font-family: var(--mono);
+        }
+
+        .msgs {
+            flex: 1;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .mi {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 28px 22px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 55vh;
+            gap: 18px;
+            animation: fu .4s ease both;
+        }
+
+        .w-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--abg);
+            border: 1px solid var(--ab);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .w-name {
+            font-family: var(--serif);
+            font-size: 26px;
+            font-weight: 400;
+            letter-spacing: -.4px;
+            line-height: 1.3;
+        }
+
+        .w-name span {
+            color: var(--accent2);
+            font-style: italic;
+        }
+
+        .w-sub {
+            font-size: 14.5px;
+            color: var(--text2);
+            max-width: 480px;
+            line-height: 1.75;
+        }
+
+        .w-note {
+            font-size: 13px;
+            color: var(--text3);
+            font-family: var(--mono);
+            padding: 8px 12px;
+            background: var(--bg3);
+            border-radius: var(--rs);
+            border-left: 2px solid var(--accent);
+            max-width: 480px;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 2px;
+        }
+
+        .chip {
+            padding: 7px 13px;
+            background: var(--bg2);
+            border: 1px solid var(--border2);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text2);
+            cursor: pointer;
+            transition: all .15s;
+            font-family: var(--font);
+        }
+
+        .chip:hover {
+            background: var(--abg);
+            border-color: var(--ab);
+            color: var(--accent2);
+        }
+
+        .mr {
+            margin-bottom: 22px;
+            animation: fu .25s ease both;
+        }
+
+        .um {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 4px;
+        }
+
+        .ub {
+            max-width: 75%;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: var(--r) var(--r) 3px var(--r);
+            padding: 10px 14px;
+            font-size: 14.5px;
+            color: var(--text);
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .u-acts {
+            display: flex;
+            justify-content: flex-end;
+            gap: 4px;
+            margin-bottom: 4px;
+            opacity: 0;
+            transition: opacity .15s;
+        }
+
+        .mr:hover .u-acts {
+            opacity: 1;
+        }
+
+        .u-edit {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 7px;
+            border: 1px solid var(--border2);
+            border-radius: var(--rx);
+            background: transparent;
+            color: var(--text3);
+            font-family: var(--mono);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .u-edit:hover {
+            background: var(--bg3);
+            color: var(--text2);
+        }
+
+        .ew {
+            display: none;
+            justify-content: flex-end;
+            margin-bottom: 6px;
+        }
+
+        .ew.show {
+            display: flex;
+        }
+
+        .eta {
+            width: 75%;
+            padding: 9px 12px;
+            background: var(--bg3);
+            border: 1.5px solid var(--accent);
+            border-radius: var(--rs);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            min-height: 60px;
+        }
+
+        .e-acts {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            justify-content: flex-end;
+        }
+
+        .e-save {
+            padding: 5px 13px;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--rx);
+            color: var(--bg);
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        .e-save:hover {
+            background: var(--accent2);
+        }
+
+        .e-cancel {
+            padding: 5px 11px;
+            background: transparent;
+            border: 1px solid var(--border2);
+            border-radius: var(--rx);
+            color: var(--text2);
+            font-family: var(--font);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .e-cancel:hover {
+            background: var(--bg3);
+            color: var(--text);
+        }
+
+        .at {
+            font-size: 15px;
+            color: var(--text);
+            line-height: 1.82;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* inline citation pill — Perplexity style */
+        .cit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: 4px;
+            font-size: 10px;
+            font-family: var(--mono);
+            font-weight: 500;
+            color: var(--text2);
+            cursor: pointer;
+            text-decoration: none;
+            vertical-align: super;
+            line-height: 1;
+            margin: 0 1px;
+            transition: all .15s;
+        }
+
+        .cit:hover {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        .ma {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            margin-top: 7px;
+            opacity: 0;
+            transition: opacity .15s;
+        }
+
+        .mr:hover .ma {
+            opacity: 1;
+        }
+
+        .act {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 7px;
+            border: 1px solid transparent;
+            border-radius: var(--rx);
+            background: transparent;
+            color: var(--text3);
+            font-family: var(--mono);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .act:hover {
+            background: var(--bg3);
+            border-color: var(--border2);
+            color: var(--text2);
+        }
+
+        .act.on {
+            color: var(--accent2);
+        }
+
+        .lr {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 3px 0;
+            margin-bottom: 16px;
+            animation: fu .2s ease both;
+        }
+
+        .dots span {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin-right: 4px;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+
+        .dots span:nth-child(2) {
+            animation-delay: .15s;
+        }
+
+        .dots span:nth-child(3) {
+            animation-delay: .3s;
+            margin-right: 0;
+        }
+
+        .lt {
+            font-size: 12px;
+            color: var(--text3);
+            font-family: var(--mono);
+        }
+
+        .ia {
+            padding: 12px 20px 15px;
+            border-top: 1px solid var(--border);
+            background: var(--bg2);
+            flex-shrink: 0;
+        }
+
+        .io {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .ibox {
+            background: var(--bg);
+            border: 1.5px solid var(--border2);
+            border-radius: var(--r);
+            padding: 10px 11px 9px 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .ibox:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(45, 212, 184, .09);
+        }
+
+        .ir {
+            display: flex;
+            align-items: flex-end;
+            gap: 7px;
+        }
+
+        #qi {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--font);
+            font-size: 14.5px;
+            color: var(--text);
+            resize: none;
+            min-height: 22px;
+            max-height: 130px;
+            line-height: 1.55;
+        }
+
+        #qi::placeholder {
+            color: var(--text3);
+        }
+
+        .send {
+            width: 33px;
+            height: 33px;
+            border-radius: var(--rs);
+            background: var(--accent);
+            border: none;
+            color: var(--bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+            flex-shrink: 0;
+        }
+
+        .send:hover {
+            background: var(--accent2);
+            transform: scale(1.04);
+        }
+
+        .send:disabled {
+            background: var(--text3);
+            cursor: not-allowed;
+            transform: none;
+            opacity: .4;
+        }
+
+        .tb {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tbtn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--rx);
+            background: transparent;
+            color: var(--text3);
+            font-family: var(--font);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .tbtn:hover {
+            background: var(--bg3);
+            color: var(--text2);
+            border-color: var(--border2);
+        }
+
+        .apill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            background: var(--abg);
+            border: 1px solid var(--ab);
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--accent2);
+            font-family: var(--mono);
+        }
+
+        .arm {
+            cursor: pointer;
+            color: var(--text3);
+            transition: color .15s;
+            margin-left: 2px;
+        }
+
+        .arm:hover {
+            color: var(--red);
+        }
+
+        .ih {
+            font-size: 11px;
+            color: var(--text3);
+            text-align: center;
+            margin-top: 5px;
+            font-family: var(--mono);
+        }
+
+        #fi {
+            display: none;
+        }
+
+        .bd {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .6);
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+        }
+
+        .bd.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--bg2);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 26px;
+            width: 420px;
+            max-width: 92vw;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, .6);
+            transform: translateY(12px);
+            transition: transform .2s;
+        }
+
+        .bd.open .modal {
+            transform: translateY(0);
+        }
+
+        .modal h2 {
+            font-family: var(--serif);
+            font-size: 21px;
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+
+        .msub {
+            font-size: 13px;
+            color: var(--text2);
+            line-height: 1.65;
+            margin-bottom: 17px;
+        }
+
+        .f {
+            margin-bottom: 12px;
+        }
+
+        .f label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text2);
+            margin-bottom: 5px;
+        }
+
+        .f input {
+            width: 100%;
+            padding: 8px 11px;
+            background: var(--bg);
+            border: 1.5px solid var(--border2);
+            border-radius: var(--rs);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 14px;
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        .f input:focus {
+            border-color: var(--accent);
+        }
+
+        .ma2 {
+            display: flex;
+            gap: 9px;
+            margin-top: 16px;
+        }
+
+        .mc {
+            flex: 1;
+            padding: 9px;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: var(--rs);
+            color: var(--text2);
+            font-family: var(--font);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .mc:hover {
+            color: var(--text);
+        }
+
+        .mo {
+            flex: 2;
+            padding: 9px;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--rs);
+            color: var(--bg);
+            font-family: var(--font);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        .mo:hover {
+            background: var(--accent2);
+        }
+
+        .mo:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .ms {
+            font-size: 12px;
+            font-family: var(--mono);
+            min-height: 18px;
+            margin-top: 9px;
+        }
+
+        .ms.ok {
+            color: var(--green);
+        }
+
+        .ms.err {
+            color: var(--red);
+        }
+
+        .ms.busy {
+            color: var(--amber);
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border2);
+            border-radius: 10px;
+        }
+
+        @keyframes fu {
+            from {
+                opacity: 0;
+                transform: translateY(9px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(.65);
+                opacity: .4;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .3;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <aside class="sb" id="sb">
+            <div class="sb-top">
+                <div class="sb-brand">Scholar <span>·</span> arXiv</div>
+                <button class="nb" onclick="newChat()">
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                        <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    New chat
+                </button>
+            </div>
+            <div class="sb-s">
+                <div class="sb-l">Conversations</div>
+            </div>
+            <div class="cl" id="cl">
+                <div class="ce" id="ce">No conversations yet</div>
+            </div>
+            <div class="sb-f">
+                <button class="ibtn" onclick="openIngest()">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M6 1v7.5M3 6l3 3 3-3M1 11h10" stroke="currentColor" stroke-width="1.3"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Ingest papers
+                </button>
+            </div>
+        </aside>
+        <div class="main">
+            <div class="topbar">
+                <button class="ib" onclick="toggleSb()" title="Toggle sidebar"><svg width="13" height="9" viewBox="0 0 13 9" fill="none">
+                        <path d="M1 1h11M1 4.5h11M1 8h11" stroke="currentColor" stroke-width="1.2"
+                            stroke-linecap="round" />
+                    </svg></button>
+                <div class="tt" id="ct">Scholar <span>— arXiv Research Assistant</span></div>
+                <div class="sp">
+                    <div class="sd" id="sd"></div><span class="sl" id="sl">connecting…</span>
+                </div>
+                <button class="ib" onclick="toggleTheme()" title="Toggle theme"><svg width="12" height="12"
+                        viewBox="0 0 12 12" fill="none">
+                        <path
+                            d="M6 1v1.3M6 9.7V11M1 6h1.3M9.7 6H11M2.4 2.4l.9.9M8.7 8.7l.9.9M2.4 9.6l.9-.9M8.7 3.3l.9-.9M6 3.7a2.3 2.3 0 100 4.6 2.3 2.3 0 000-4.6z"
+                            stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                    </svg></button>
+            </div>
+            <div class="msgs" id="msgs">
+                <div class="mi" id="mi">
+                    <div class="welcome" id="wlc">
+                        <div class="w-avatar">📄</div>
+                        <div>
+                            <div class="w-name">Hey! I'm <span>Scholar</span> 👋</div>
+                        </div>
+                        <div class="w-sub">Your research assistant for ArXiv papers. Ask me anything — I search across
+                            ML, AI, physics, biology, and more, then answer with sources you can actually verify.</div>
+                        <div class="w-note">⚠ I can make mistakes. Always double-check key findings in the original
+                            paper.</div>
+                        <div class="chips">
+                            <button class="chip" onclick="useChip(this)">How does attention work in
+                                transformers?</button>
+                            <button class="chip" onclick="useChip(this)">What are diffusion models?</button>
+                            <button class="chip" onclick="useChip(this)">Explain contrastive learning</button>
+                            <button class="chip" onclick="useChip(this)">How does RLHF work?</button>
+                            <button class="chip" onclick="useChip(this)">What is sparse attention?</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ia">
+                <div class="io">
+                    <div class="ibox">
+                        <div id="az"></div>
+                        <div class="ir">
+                            <textarea id="qi" placeholder="Ask about any research paper or topic…" rows="1"
+                                onkeydown="onKey(event)" oninput="rsz(this)"></textarea>
+                            <button class="send" id="sb2" type="button" title="Send message" onclick="send()"><svg width="13" height="13"
+                                    viewBox="0 0 13 13" fill="none">
+                                    <path d="M6.5 11V2M2 6.5L6.5 2l4.5 4.5" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg></button>
+                        </div>
+                        <div class="tb">
+                            <button class="tbtn" onclick="document.getElementById('fi').click()">
+                                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                                    <path d="M2.5 9.5h6M5.5 1.5v6M3 5l2.5 2.5L8 5" stroke="currentColor"
+                                        stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Attach PDF
+                            </button>
+                            <input type="file" id="fi" accept=".pdf,.txt" onchange="attachFile(this)">
+                        </div>
+                    </div>
+                    <div class="ih">Scholar may make mistakes — verify important findings in the original paper</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bd" id="modal" onclick="bgClose(event)">
+        <div class="modal">
+            <h2>Ingest papers</h2>
+            <p class="msub">Fetch ArXiv papers on any topic and make them instantly searchable — ML, physics, biology,
+                economics, medicine, and more.</p>
+            <div class="f"><label>Topic or search query</label><input id="iq" type="text"
+                    placeholder="e.g. protein folding, quantum computing, climate…"></div>
+            <div class="f"><label for="ic">Number of papers</label><input id="ic" type="number" value="15" min="1" max="50" title="Number of papers to fetch">
+            </div>
+            <div class="ms" id="mss"></div>
+            <div class="ma2">
+                <button class="mc" onclick="closeIngest()">Cancel</button>
+                <button class="mo" id="mb" onclick="runIngest()">Fetch &amp; Index</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const API = 'http://localhost:8000';
+        let convs = JSON.parse(localStorage.getItem('sc') || '[]');
+        let curId = null, busy = false, sbOpen = true, attTxt = null, attName = null, hasPDF = false, spk = false;
+        (function () { const t = localStorage.getItem('st'); if (t) document.documentElement.setAttribute('data-theme', t); renderConvs(); checkH(); })();
+        async function checkH() { try { const r = await fetch(API + '/health'); const d = await r.json(); setSt('on', d.model + ' ready'); } catch { setSt('off', 'server offline'); } }
+        function setSt(s, t) { document.getElementById('sd').className = 'sd' + (s === 'on' ? ' on' : s === 'busy' ? ' busy' : ''); document.getElementById('sl').textContent = t; }
+        function toggleTheme() { const c = document.documentElement.getAttribute('data-theme'); const n = c === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('st', n); }
+        function toggleSb() { sbOpen = !sbOpen; document.getElementById('sb').classList.toggle('off', !sbOpen); }
+        function newChat() { curId = null; document.getElementById('mi').innerHTML = wHTML(); document.getElementById('ct').innerHTML = 'Scholar <span>— arXiv Research Assistant</span>'; stopSpk(); renderConvs(); }
+        function wHTML() { return `<div class="welcome" id="wlc"><div class="w-avatar">📄</div><div><div class="w-name">Hey! I'm <span>Scholar</span> 👋</div></div><div class="w-sub">Your research assistant for ArXiv papers. Ask me anything — I search across ML, AI, physics, biology, and more, then answer with sources you can actually verify.</div><div class="w-note">⚠ I can make mistakes. Always double-check key findings in the original paper.</div><div class="chips"><button class="chip" onclick="useChip(this)">How does attention work in transformers?</button><button class="chip" onclick="useChip(this)">What are diffusion models?</button><button class="chip" onclick="useChip(this)">Explain contrastive learning</button><button class="chip" onclick="useChip(this)">How does RLHF work?</button><button class="chip" onclick="useChip(this)">What is sparse attention?</button></div></div>`; }
+        function renderConvs() { const cl = document.getElementById('cl'); const ce = document.getElementById('ce'); cl.querySelectorAll('.ci').forEach(e => e.remove()); if (!convs.length) { ce.style.display = ''; return; } ce.style.display = 'none';[...convs].reverse().forEach(c => { const el = document.createElement('div'); el.className = 'ci' + (c.id === curId ? ' act' : ''); el.innerHTML = `<span class="ci-t">${esc(c.title)}</span><span class="ci-x" onclick="delC(event,'${c.id}')">✕</span>`; el.onclick = e => { if (!e.target.classList.contains('ci-x')) loadC(c.id); }; cl.insertBefore(el, ce); }); }
+        function delC(e, id) { e.stopPropagation(); convs = convs.filter(c => c.id !== id); sv(); if (curId === id) newChat(); else renderConvs(); }
+        function loadC(id) { const c = convs.find(x => x.id === id); if (!c) return; curId = id; document.getElementById('ct').textContent = c.title; const mi = document.getElementById('mi'); mi.innerHTML = ''; c.msgs.forEach(m => { if (m.role === 'user') addU(m.text); else addA(m.text, m.srcs || [], m.fromPDF || false); }); renderConvs(); scrollB(); }
+        function sv() { localStorage.setItem('sc', JSON.stringify(convs)); }
+        function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
+        function rsz(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 130) + 'px'; }
+        function useChip(b) { document.getElementById('qi').value = b.textContent; send(); }
+        async function attachFile(inp) {
+            const file = inp.files[0]; if (!file) return;
+            attName = file.name; hasPDF = true;
+            showPill('Reading ' + file.name + '…');
+            try {
+                if (file.name.toLowerCase().endsWith('.pdf')) {
+                    const ab = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+                    let txt = '';
+                    const pages = Math.min(pdf.numPages, 20);
+                    for (let i = 1; i <= pages; i++) { const pg = await pdf.getPage(i); const tc = await pg.getTextContent(); txt += tc.items.map(x => x.str).join(' ') + '\n'; }
+                    attTxt = txt.slice(0, 5000);
+                    showPill('📄 ' + file.name + ' (' + pages + ' pages read)');
+                } else {
+                    attTxt = await file.text(); attTxt = attTxt.slice(0, 5000);
+                    showPill('📄 ' + file.name);
+                }
+            } catch (err) { showPill('⚠ Read error: ' + file.name); attTxt = '[PDF read error: ' + err.message + ']'; hasPDF = false; }
+            inp.value = '';
+        }
+        function showPill(n) { document.getElementById('az').innerHTML = `<div class="apill"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v6M2 5l3 3 3-3M1 9h8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>${esc(n)}<span class="arm" onclick="clearAtt()" title="Remove">✕</span></div>`; }
+        function clearAtt() { attTxt = null; attName = null; hasPDF = false; document.getElementById('az').innerHTML = ''; }
+        async function send() {
+            const qi = document.getElementById('qi'); let q = qi.value.trim(); if (!q || busy) return;
+            const pdfAttached = hasPDF && attTxt;
+            let sendQ = q;
+            if (pdfAttached) sendQ = q + '\n\n[The user has attached a PDF paper. Use the following content from the paper to answer. Paper name: ' + attName + ']\n"""\n' + attTxt + '\n"""';
+            busy = true; document.getElementById('sb2').disabled = true; setSt('busy', 'thinking…'); rmW(); stopSpk();
+            qi.value = ''; qi.style.height = 'auto';
+            const wasPDF = pdfAttached; clearAtt();
+            addU(q); const lid = 'l' + Date.now(); showLoad(lid); scrollB();
+            try {
+                const r = await fetch(API + '/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: sendQ, n_results: 5 }) });
+                if (!r.ok) throw new Error('Server error ' + r.status);
+                const d = await r.json(); rmLoad(lid);
+                // When PDF was attached, don't show database sources — answer came from PDF
+                const srcsToShow = wasPDF ? [] : d.sources || [];
+                addA(d.answer || '', srcsToShow, wasPDF);
+                saveC(q, d.answer || '', srcsToShow, wasPDF);
+                setSt('on', 'ready');
+            } catch (err) { rmLoad(lid); addA('Connection error: ' + err.message + '. Make sure the server is running at localhost:8000.', [], false); setSt('off', 'error'); }
+            finally { busy = false; document.getElementById('sb2').disabled = false; scrollB(); }
+        }
+        function rmW() { const w = document.getElementById('wlc'); if (w) w.remove(); }
+        function saveC(q, ans, srcs, fromPDF) {
+            if (!curId) { curId = 'c' + Date.now(); convs.push({ id: curId, title: q.slice(0, 55), msgs: [] }); document.getElementById('ct').textContent = q.slice(0, 44) + (q.length > 44 ? '…' : ''); }
+            const c = convs.find(x => x.id === curId);
+            if (c) { c.msgs.push({ role: 'user', text: q }); c.msgs.push({ role: 'assistant', text: ans, srcs, fromPDF }); }
+            sv(); renderConvs();
+        }
+        function addU(t) {
+            const mi = document.getElementById('mi'); const row = document.createElement('div'); row.className = 'mr';
+            const uid = 'u' + Date.now();
+            row.innerHTML = `<div class="u-acts"><button class="u-edit" onclick="startEdit('${uid}')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 9l2-1 5.5-5.5-1-1L2 8 1 9zM7 1.5l1.5 1.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg> Edit</button></div><div class="um"><div class="ub" id="${uid}">${esc(t)}</div></div><div class="ew" id="ew-${uid}"><div style="width:75%;display:flex;flex-direction:column;gap:5px"><textarea class="eta" id="et-${uid}">${esc(t)}</textarea><div class="e-acts"><button class="e-cancel" onclick="cancelEdit('${uid}')">Cancel</button><button class="e-save" onclick="saveEdit('${uid}')">Resend</button></div></div></div>`;
+            mi.appendChild(row);
+        }
+        function startEdit(uid) { document.getElementById(uid).closest('.um').style.display = 'none'; document.getElementById('ew-' + uid).classList.add('show'); const et = document.getElementById('et-' + uid); et.focus(); et.style.height = 'auto'; et.style.height = et.scrollHeight + 'px'; }
+        function cancelEdit(uid) { document.getElementById(uid).closest('.um').style.display = ''; document.getElementById('ew-' + uid).classList.remove('show'); }
+        function saveEdit(uid) {
+            const et = document.getElementById('et-' + uid); const nq = et.value.trim(); if (!nq) return;
+            const row = document.getElementById(uid).closest('.mr'); const next = row.nextElementSibling; if (next && next.classList.contains('mr')) next.remove(); row.remove();
+            if (curId) { const c = convs.find(x => x.id === curId); if (c && c.msgs.length >= 2) { c.msgs = c.msgs.slice(0, -2); sv(); } }
+            document.getElementById('qi').value = nq; send();
+        }
+        function addA(t, srcs, fromPDF) {
+            const mi = document.getElementById('mi'); const row = document.createElement('div'); row.className = 'mr';
+            const sm = {}; (srcs || []).forEach(s => { sm[s.source_number] = s; });
+            const dontKnow = t.toLowerCase().includes("don't have enough information") || t.includes("cannot find") || t.includes("not found in");
+            const showSrcs = srcs && srcs.length > 0 && !dontKnow && !fromPDF;
+            // Replace [N] with Perplexity-style inline pills
+            let html = esc(t).replace(/\[(\d+)\]/g, (m, n) => {
+                const s = sm[+n];
+                if (!s) return m;
+                return `<a class="cit" href="https://arxiv.org/abs/${s.arxiv_id || ''}" target="_blank" rel="noopener" title="${esc(s.title || '')}">${n}</a>`;
+            });
+            // Source pills row (only if applicable)
+            const pillsHtml = showSrcs ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px">${srcs.map(s => `<a href="https://arxiv.org/abs/${s.arxiv_id || ''}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px 4px 6px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;text-decoration:none;font-size:11px;color:var(--text2);transition:all .15s;max-width:200px;" onmouseover="this.style.borderColor='var(--ab)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'"><span style="width:15px;height:15px;border-radius:3px;background:var(--abg);border:1px solid var(--ab);color:var(--accent2);font-size:9px;font-family:var(--mono);font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${s.source_number}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">${esc((s.title || '').slice(0, 28) + ((s.title || '').length > 28 ? '…' : ''))}</span></a>`).join('')}</div>` : '';
+            const fromPDFNote = fromPDF ? `<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:8px;padding:5px 9px;background:var(--bg3);border-radius:var(--rx);border-left:2px solid var(--accent)">Answered from attached PDF</div>` : '';
+            const mid = 'm' + Date.now();
+            row.innerHTML = `<div><div class="at" id="${mid}">${html}</div>${pillsHtml}${fromPDFNote}<div class="ma"><button class="act" onclick="cpMsg('${mid}',this)"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1.3" stroke="currentColor" stroke-width="1"/><path d="M7 2.5V1.5A1 1 0 006 .5H1.5A1 1 0 00.5 1.5V6A1 1 0 001.5 7H2.5" stroke="currentColor" stroke-width="1"/></svg> Copy</button><button class="act" onclick="spkMsg('${mid}',this)"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 3.5h2l2-1.5v6l-2-1.5H1.5v-3z" stroke="currentColor" stroke-width="1"/><path d="M7 3c.6.4.9 1 .9 1.8s-.3 1.4-.9 1.8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg> Listen</button><button class="act" onclick="regen(this)"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5A4 4 0 018.5 3.5M1 1.5V5H4.5M9 5A4 4 0 011.5 6.5M9 8.5V5H5.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg> Regenerate</button></div></div>`;
+            mi.appendChild(row);
+        }
+        function cpMsg(id, btn) { const el = document.getElementById(id); navigator.clipboard.writeText(el.innerText).then(() => { btn.classList.add('on'); const o = btn.innerHTML; btn.textContent = ' ✓ Copied'; setTimeout(() => { btn.classList.remove('on'); btn.innerHTML = o; }, 2000); }); }
+        function spkMsg(id, btn) { if (spk) { stopSpk(); btn.classList.remove('on'); return; } const el = document.getElementById(id); const u = new SpeechSynthesisUtterance(el.innerText); u.rate = .92; u.onend = () => { spk = false; btn.classList.remove('on'); }; speechSynthesis.speak(u); spk = true; btn.classList.add('on'); }
+        function stopSpk() { if (speechSynthesis.speaking) speechSynthesis.cancel(); spk = false; }
+        function regen(btn) { const row = btn.closest('.mr'); const prev = row.previousElementSibling; if (!prev) return; const ub = prev.querySelector('.ub'); if (!ub) return; const q = ub.textContent; row.remove(); if (curId) { const c = convs.find(x => x.id === curId); if (c && c.msgs.length >= 2) { c.msgs = c.msgs.slice(0, -2); sv(); } } document.getElementById('qi').value = q; send(); }
+        function showLoad(id) { const mi = document.getElementById('mi'); const el = document.createElement('div'); el.id = id; el.className = 'lr'; el.innerHTML = `<div class="dots"><span></span><span></span><span></span></div><div class="lt">Scholar is searching…</div>`; mi.appendChild(el); }
+        function rmLoad(id) { const el = document.getElementById(id); if (el) el.remove(); }
+        function scrollB() { const m = document.getElementById('msgs'); requestAnimationFrame(() => { m.scrollTop = m.scrollHeight; }); }
+        function openIngest() { document.getElementById('modal').classList.add('open'); document.getElementById('mss').textContent = ''; document.getElementById('mss').className = 'ms'; document.getElementById('mb').disabled = false; document.getElementById('mb').textContent = 'Fetch & Index'; document.getElementById('iq').focus(); }
+        function closeIngest() { document.getElementById('modal').classList.remove('open'); }
+        function bgClose(e) { if (e.target === document.getElementById('modal')) closeIngest(); }
+        async function runIngest() { const q = document.getElementById('iq').value.trim(); const n = parseInt(document.getElementById('ic').value) || 15; const mss = document.getElementById('mss'); const mb = document.getElementById('mb'); if (!q) { mss.textContent = 'Please enter a topic.'; mss.className = 'ms err'; return; } mb.disabled = true; mb.textContent = 'Fetching…'; mss.textContent = 'Indexing — this may take 30–60s…'; mss.className = 'ms busy'; try { const r = await fetch(API + '/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q, max_results: n }) }); const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); mss.textContent = '✓ ' + d.papers_fetched + ' papers, ' + d.chunks_stored + ' chunks indexed.'; mss.className = 'ms ok'; mb.textContent = 'Done!'; setTimeout(() => { closeIngest(); mb.textContent = 'Fetch & Index'; mb.disabled = false; }, 2200); } catch (err) { mss.textContent = 'Error: ' + err.message; mss.className = 'ms err'; mb.textContent = 'Fetch & Index'; mb.disabled = false; } }
+        function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    </script>
+</body>
+
+</html>
