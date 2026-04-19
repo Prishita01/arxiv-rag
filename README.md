@@ -87,47 +87,6 @@ The tradeoff: cross-encoders are ~100x slower than bi-encoders. The solution is 
 
 ---
 
-## Project Structure
-
-```
-arxiv-rag/
-├── api/
-│   ├── main.py                    # FastAPI app, 4 endpoints
-│   └── static/
-│       └── index.html             # Scholar UI (dark/light, PDF, history)
-├── src/
-│   ├── ingestion/
-│   │   └── arxiv_fetcher.py       # ArXiv API client
-│   ├── database/
-│   │   └── postgres_client.py     # PostgreSQL CRUD
-│   ├── preprocessing/
-│   │   └── chunker.py             # Sliding window chunker
-│   ├── embeddings/
-│   │   └── embedder.py            # sentence-transformers wrapper
-│   ├── vectorstore/
-│   │   └── chroma_client.py       # ChromaDB upsert + query
-│   ├── retriever/
-│   │   ├── dense_retriever.py     # ChromaDB semantic search
-│   │   ├── sparse_retriever.py    # BM25 keyword search
-│   │   └── hybrid_retriever.py    # RRF fusion
-│   ├── reranking/
-│   │   └── reranker.py            # Cross-encoder reranker
-│   └── generation/
-│       └── generator.py           # Ollama LLM client + prompt
-├── config/
-│   └── settings.py                # Centralised config via .env
-├── docker/
-│   ├── Dockerfile                 # Python 3.12 slim image
-│   └── docker-compose.yml         # PostgreSQL + FastAPI services
-├── tests/
-│   └── test_pipeline.py           # End-to-end pipeline test
-├── .env.example                   # Environment template
-├── requirements.txt
-└── README.md
-```
-
----
-
 ## Quickstart
 
 ### Prerequisites
