@@ -1,0 +1,25 @@
+# virtual env
+venv/
+
+# env variable
+.env
+
+Python cache files (auto generated , not source code)
+__pycache__/
+*.pyc
+*.pyo
+
+# chromadb local storage
+chroma_db/
+
+# macos system files
+.DS_Store
+
+# vscode settings, machine specific
+.vscode/
+
+#jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# logs
+.log
