@@ -6,7 +6,7 @@ services:
     container_name: scholar-db
     environment:
       POSTGRES_USER: prishita
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scholar_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: arxiv_rag
     ports:
       - "5432:5432"
